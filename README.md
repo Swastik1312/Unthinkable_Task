@@ -17,5 +17,4 @@ A demonstration video showing the workflow: uploading an audio file, real-time t
 | Backend | Python, FastAPI |
 | Speech Recognition | `speech_recognition` |
 | AI / Summarization | Google Gemini |
-| Frontend | React / HTML + CSS / Material UI |
-| Deployment | (e.g., Heroku, AWS, Docker) |
+| Frontend | / HTML + CSS / JS |
