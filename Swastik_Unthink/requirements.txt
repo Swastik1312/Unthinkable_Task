@@ -1,0 +1,99 @@
+import os
+import shutil
+from fastapi import FastAPI, File, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+import google.generativeai as genai
+from dotenv import load_dotenv
+import speech_recognition as sr
+from pydub import AudioSegment
+
+# Load environment variables (for GEMINI_API_KEY)
+load_dotenv()
+
+app = FastAPI()
+
+# Enable CORS so frontend or API tools can call it easily
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Configure Gemini API
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
+
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to the Meeting Summarizer API"}
+
+
+@app.post("/summarize")
+async def summarize_meeting(audio_file: UploadFile = File(...)):
+    """
+    Endpoint to accept an audio file, transcribe it using Google's SpeechRecognition,
+    then summarize it into key decisions and action items using Gemini.
+    """
+
+    input_path = audio_file.filename
+    output_path = "converted.wav"
+
+    try:
+        # Step 1: Save the uploaded file locally
+        with open(input_path, "wb") as buffer:
+            shutil.copyfileobj(audio_file.file, buffer)
+
+        # Step 2: Convert to WAV format (PCM) using pydub + ffmpeg
+        try:
+            audio = AudioSegment.from_file(input_path)
+            audio.export(output_path, format="wav")
+        except Exception as e:
+            raise ValueError(f"Audio conversion failed. Check file format. Details: {e}")
+
+        # Step 3: Transcribe the audio using SpeechRecognition
+        recognizer = sr.Recognizer()
+        with sr.AudioFile(output_path) as source:
+            audio_data = recognizer.record(source)
+            transcript = recognizer.recognize_google(audio_data)
+
+        # Step 4: Generate summary using Gemini API
+        model = genai.GenerativeModel("gemini-2.5-flash")
+        prompt = (
+            f"Summarize this meeting transcript into key decisions and action items:\n\n{transcript}"
+        )
+        response = model.generate_content(prompt)
+
+        # Step 5: Return both transcript and summary
+        return {
+            "transcript": transcript,
+            "summary": response.text if hasattr(response, "text") else "No summary generated",
+        }
+
+    except sr.UnknownValueError:
+        return {"error": "Speech Recognition could not understand the audio."}
+
+    except sr.RequestError as e:
+        return {"error": f"Speech Recognition API error: {e}"}
+
+    except ValueError as e:
+        return {"error": str(e)}
+
+    except Exception as e:
+        # Print full traceback in console for debugging
+        import traceback
+        traceback.print_exc()
+        return {"error": f"Internal server error: {str(e)}"}
+
+    finally:
+        # Step 6: Clean up local temporary files
+        if os.path.exists(input_path):
+            os.remove(input_path)
+        if os.path.exists(output_path):
+            os.remove(output_path)
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

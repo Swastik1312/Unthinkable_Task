@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meeting Summarizer</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="wrapper">
+    <header>
+      <h1>🪶 Meeting Summarizer</h1>
+      <p class="subtitle">Turn your meeting recordings into concise, elegant summaries.</p>
+    </header>
+
+    <main class="card">
+      <div class="upload-container" id="drop-zone">
+        <input type="file" id="audioFile" accept="audio/*" hidden />
+        <label for="audioFile" id="uploadLabel" class="upload-label">
+          <span class="icon">🎧</span>
+          <span id="uploadText">Drag & drop or click to upload your audio</span>
+        </label>
+      </div>
+
+      <button id="submitBtn" class="btn primary">Summarize</button>
+
+      <div class="loader" id="loader"></div>
+
+      <section id="output" class="output">
+        <div class="result-card">
+          <h3>🗣 Transcript</h3>
+          <p id="transcript"></p>
+        </div>
+
+        <div class="result-card">
+          <h3>📋 Summary</h3>
+          <p id="summary"></p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>Made with ❤️ using FastAPI & Gemini AI</p>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
